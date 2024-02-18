@@ -159,16 +159,24 @@ class Data:
                     else:
                         num_cat_sample.append(element)
             self.data.append(num_cat_sample)
-        # update headers list to match self.data
+        # update headers and header_types lists to match self.data
         new_headers = []
+        new_header_types =[]
         for header in self.headers:
             if self.headers.index(header) in cols_to_keep:
                 new_headers.append(header)
+                new_header_types.append(self.header_types[self.headers.index(header)])
         self.headers = new_headers
+        self.header_types = new_header_types
 
+        # set self.cats2levels if none passed in
+        if self.cats2levels == None:
+            self.cats2levels = {}
+            for header in self.headers:
+                self.cats2levels[header] = []
+            # parse categorical columns in self.data and append to dictionary entry
+            cat_col_index = []
             
-    def get_col_type(self, col_index):
-        pass
 
     def __str__(self):
         '''toString method
