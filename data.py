@@ -41,18 +41,15 @@ class Data:
                 'letter' -> ['a', 'b', 'c']
                 'number' -> ['1', '2']
                 'greeting' -> ['hi']
-
-        TODO:
-        - Declare/initialize the following instance variables:
-            - filepath
-            - headers
-            - data
-            - header2col
-            - cats2levels
-            - Any others you find helpful in your implementation
-        - If `filepath` isn't None, call the `read` method.
         '''
-        pass
+        self.filepath = filepath
+        self.headers = headers
+        self.data = data
+        self.header2col = header2col
+        self.cats2levels = cats2levels
+        
+        if self.filepath != None:
+            self.read(self.filepath)
 
     def read(self, filepath):
         '''Read in the .csv file `filepath` in 2D tabular format. Convert to numpy ndarray called `self.data` at the end
@@ -120,6 +117,57 @@ class Data:
         variable types afterward.
         - Make use of code from Lab 1a!
         '''
+        
+        self.filepath = filepath
+        
+        with open(self.filepath) as f:
+            
+            data = []
+            # get all lines from .csv file
+            for line in f:
+                lines = line.split(',')
+                stripped_lines = []
+                for element in lines:
+                    stripped_lines.append(element.strip())
+                data.append(stripped_lines)
+            # check if file format is correct--1st row headers, 2nd row header types
+            valid_header_types = ['string', 'numeric', 'categorical', 'date']
+            for element in data[1]:
+                if element not in valid_header_types:
+                    print("ERROR: invalid header categories. Make sure first and second lines of csv file are headers and categories respectively.")
+                    print("Invalid element: ", "\"", element, "\"")
+                    exit()
+            # assign headers
+            self.headers = data[0]
+            self.header_types = data[1]
+
+        # determine which cols to copy to self.data
+        data_types = ['numeric', 'categorical']
+        cols_to_keep = []
+        for i in range(len(data[1])):
+            if data[1][i] in data_types:
+                cols_to_keep.append(i)
+        # loop through data list and append proper columns to self.data
+        self.data = []
+        for sample in data[2:]:
+            num_cat_sample = []
+            for element in sample:
+                if sample.index(element) in cols_to_keep:
+                    # turn into float if possible
+                    if element.isdigit():
+                        num_cat_sample.append(float(element))
+                    else:
+                        num_cat_sample.append(element)
+            self.data.append(num_cat_sample)
+        # update headers list to match self.data
+        new_headers = []
+        for header in self.headers:
+            if self.headers.index(header) in cols_to_keep:
+                new_headers.append(header)
+        self.headers = new_headers
+
+            
+    def get_col_type(self, col_index):
         pass
 
     def __str__(self):
