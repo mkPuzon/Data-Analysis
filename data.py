@@ -141,29 +141,60 @@ class Data:
             self.headers = data[0]
             self.header_types = data[1]
 
+        # set self.cats2levels
+        self.cats2levels = {}
+        for i in range(len(self.headers)):
+            # check if need to add to self.cats2levels dict
+            if self.header_types[i] == 'categorical':
+                # make dict entry with empty list as key
+                self.cats2levels[self.headers[i]] = []
+                # for sample in self.data:
+                #     # print(sample[i]) # 14 causing problems in test04
+                #     if sample[i] not in self.cats2levels[self.headers[i]]:
+                #         # if element not an option in its cats2levels dictionary key list add it
+                #         self.cats2levels[self.headers[i]].append(sample[i])
+                        
         # determine which cols to copy to self.data
         data_types = ['numeric', 'categorical']
-        cols_to_keep = []
+        # cols_to_keep = []
+        numcols_to_keep = []
+        catcols_to_keep = []
         for i in range(len(data[1])):
-            if data[1][i] in data_types:
-                cols_to_keep.append(i)
+            if data[1][i] == data_types[0]:
+                numcols_to_keep.append(i)
+            elif data[1][i] == data_types[1]:
+                catcols_to_keep.append(i)
         # loop through data list and append proper columns to self.data
         self.data = []
         for sample in data[2:]:
             num_cat_sample = []
-            for element in sample:
-                if sample.index(element) in cols_to_keep:
+            # for element in sample:
+            for i in range(len(sample)):
+                # handle missing data
+                if len(sample[i]) == 0:
+                    if i in numcols_to_keep:
+                        sample[i] = np.nan
+                    elif i in catcols_to_keep:
+                        sample[i] = 'Missing'
+                # if sample.index(element) in cols_to_keep:
+                # if i in cols_to_keep:
+                if i in numcols_to_keep:
                     # turn into float if possible
-                    if element.isdigit():
-                        num_cat_sample.append(float(element))
-                    else:   # append string element
-                        num_cat_sample.append(element)
+                    num_cat_sample.append(float(sample[i]))
+                elif i in catcols_to_keep:
+                    # print(sample[i]) # 14 causing problems in test04
+                    if sample[i] not in self.cats2levels[self.headers[i]]:
+                        # if element not an option in its cats2levels dictionary key list add it
+                        self.cats2levels[self.headers[i]].append(sample[i])
+        
+                    # num_cat_sample.append(sample[i])
+                    num_cat_sample.append(self.cats2levels[self.headers[i]].index(sample[i]))
             self.data.append(num_cat_sample)
         # update headers and header_types lists to match self.data
         new_headers = []
         new_header_types =[]
         for header in self.headers:
-            if self.headers.index(header) in cols_to_keep:
+            if self.headers.index(header) in numcols_to_keep or self.headers.index(header) in catcols_to_keep:
                 new_headers.append(header)
                 new_header_types.append(self.header_types[self.headers.index(header)])
         self.headers = new_headers
@@ -174,20 +205,8 @@ class Data:
         for i in range(len(self.headers)):
             h2i[self.headers[i]] = i
         self.header2col = h2i
-
-        # set self.cats2levels
-        self.cats2levels = {}
-        for i in range(len(self.headers)):
-            # check if need to add to self.cats2levels dict
-            if self.header_types[i] == 'categorical':
-                # make dict entry with empty list as key
-                self.cats2levels[self.headers[i]] = []
-                for sample in self.data:
-                    # print(sample[i]) # 14 causing problems
-                    if sample[i] not in self.cats2levels[self.headers[i]]:
-                        # if element not an option in its cats2levels dictionary key list add it
-                        self.cats2levels[self.headers[i]].append(sample[i])
-
+                        
+        # change empty entries to 'Missing'
         for key in self.cats2levels:
             for element in self.cats2levels[key]:
                 if element == '':
@@ -198,24 +217,6 @@ class Data:
         for i in range(len(self.headers)):
             self.header2col[self.headers[i]] = i
             
-        # handle missing data and map categorical variable string to int from cats2levels
-        to_replace = [] # contains indicies of element to replace in each sample
-        for i in range(len(self.headers)):
-            if self.header_types[i] == 'categorical': # get index to replace in each sample
-                to_replace.append(i)
-        for i in range(len(self.data)):
-            # self.data[i] == sample
-            for j in range(len(self.data[i])):
-                # self.data[i][j] = element
-                if j in to_replace:
-                    self.data[i][j] = self.cats2levels[self.headers[j]].index(self.data[i][j])
-                        # sample[sample.index(element)] = float(self.cats2levels[self.headers[sample.index(element)]].index(element))
-                else: # numeric data
-                    if self.data[i][j] == '':
-                        self.data[i][j] = np.nan
-                    else:
-                        # print(self.data[i][j])
-                        self.data[i][j] = float(self.data[i][j])
         # convert to numpy array
         self.data = np.array(self.data)
          
@@ -235,7 +236,14 @@ class Data:
         NOTE: It is fine to print out int-coded categorical variables (no extra work compared to printing out numeric data).
         Printing out the categorical variables with string levels would be a small extension.
         '''
-        pass
+        final_str = f"""File: {self.filepath} ({len(self.data)}x{len(self.headers)})
+Headers :
+{self.headers}
+------------------------
+Showing first 5/{len(self.data)} rows:
+{self.data[:5]}
+        """
+        return final_str
 
     def get_headers(self):
         '''Get list of header names (all variables)
@@ -244,7 +252,7 @@ class Data:
         -----------
         Python list of str.
         '''
-        pass
+        return self.headers.copy()
 
     def get_mappings(self):
         '''Get method for mapping between variable name and column index
@@ -253,7 +261,7 @@ class Data:
         -----------
         Python dictionary. str -> int
         '''
-        pass
+        return self.header2col
 
     def get_cat_level_mappings(self):
         '''Get method for mapping between categorical variable names and a list of the respective unique level strings.
@@ -262,7 +270,7 @@ class Data:
         -----------
         Python dictionary. str -> list of str
         '''
-        pass
+        return self.cats2levels
 
     def get_num_dims(self):
         '''Get method for number of dimensions in each data sample
@@ -271,7 +279,7 @@ class Data:
         -----------
         int. Number of dimensions in each data sample. Same thing as number of variables.
         '''
-        pass
+        return len(self.headers)
 
     def get_num_samples(self):
         '''Get method for number of data points (samples) in the dataset
@@ -280,7 +288,7 @@ class Data:
         -----------
         int. Number of data samples in dataset.
         '''
-        pass
+        return len(self.data)
 
     def get_sample(self, rowInd):
         '''Gets the data sample at index `rowInd` (the `rowInd`-th sample)
@@ -289,7 +297,7 @@ class Data:
         -----------
         ndarray. shape=(num_vars,) The data sample at index `rowInd`
         '''
-        pass
+        return self.data[rowInd]
 
     def get_header_indices(self, headers):
         '''Gets the variable (column) indices of the str variable names in `headers`.
@@ -302,7 +310,10 @@ class Data:
         -----------
         Python list of nonnegative ints. shape=len(headers). The indices of the headers in `headers` list.
         '''
-        pass
+        indecies = []
+        for header in headers:
+            indecies.append(self.header2col[header])
+        return indecies
 
     def get_all_data(self):
         '''Gets a copy of the entire dataset
