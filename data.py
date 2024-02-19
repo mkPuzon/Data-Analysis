@@ -168,7 +168,7 @@ class Data:
                 new_header_types.append(self.header_types[self.headers.index(header)])
         self.headers = new_headers
         self.header_types = new_header_types
-        
+
         # create dictionary to map headers (string) to column index (int)
         h2i = {}
         for i in range(len(self.headers)):
@@ -178,11 +178,14 @@ class Data:
         # set self.cats2levels
         self.cats2levels = {}
         for i in range(len(self.headers)):
+            # check if need to add to self.cats2levels dict
             if self.header_types[i] == 'categorical':
+                # make dict entry with empty list as key
                 self.cats2levels[self.headers[i]] = []
                 for sample in self.data:
-                    #  print(i) # 14 causing problems
+                    # print(sample[i]) # 14 causing problems
                     if sample[i] not in self.cats2levels[self.headers[i]]:
+                        # if element not an option in its cats2levels dictionary key list add it
                         self.cats2levels[self.headers[i]].append(sample[i])
 
         for key in self.cats2levels:
@@ -195,34 +198,25 @@ class Data:
         for i in range(len(self.headers)):
             self.header2col[self.headers[i]] = i
             
-        # handle missing data
-        
-        # map categorical variable string to int from cats2levels
+        # handle missing data and map categorical variable string to int from cats2levels
         to_replace = [] # contains indicies of element to replace in each sample
         for i in range(len(self.headers)):
             if self.header_types[i] == 'categorical': # get index to replace in each sample
                 to_replace.append(i)
-        for sample in self.data:
-            print(f'SAMPLE: {sample}')
-            for element in sample:
-                if sample.index(element) in to_replace: # replace string value with corresponding int from cats2levels
-                    if element == '':
-                        sample[sample.index(element)] = 'Missing'
-                    else:
-                        print(f'element: {element}')
-                        print(f'looking in: {self.cats2levels[self.headers[sample.index(element)]]}')
-                        # get levels back to categories for comparison
-                        sample[sample.index(element)] = float(self.cats2levels[self.headers[sample.index(element)]].index(element))
+        for i in range(len(self.data)):
+            # self.data[i] == sample
+            for j in range(len(self.data[i])):
+                # self.data[i][j] = element
+                if j in to_replace:
+                    self.data[i][j] = self.cats2levels[self.headers[j]].index(self.data[i][j])
+                        # sample[sample.index(element)] = float(self.cats2levels[self.headers[sample.index(element)]].index(element))
                 else: # numeric data
-                    if element == '':
-                        sample[sample.index(element)] = np.nan
-                # # for numeric rows
-                # else: # turn into float or 'np.nan' if missing
-                #     if element == '': # if missing
-                #         sample[sample.index(element)] = np.nan
-                #     else: # turn into float
-                #         sample[sample.index(element)] = float(element)
-
+                    if self.data[i][j] == '':
+                        self.data[i][j] = np.nan
+                    else:
+                        # print(self.data[i][j])
+                        self.data[i][j] = float(self.data[i][j])
+        # convert to numpy array
         self.data = np.array(self.data)
          
 

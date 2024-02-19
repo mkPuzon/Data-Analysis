@@ -6,7 +6,7 @@ def test():
     filepath_miss = 'data\\test_data_missing.csv'
     filepath_miss2 = 'data\\test_missing.csv'
     
-    test_data = Data(filepath_miss2)
+    test_data = Data(filepath_iris)
     
 if __name__ == "__main__":
     test()
