@@ -386,7 +386,7 @@ Showing first 5/{len(self.data)} rows:
         for header in headers:
             # get header indecies
             cols_index.append(self.header2col[header])
-        if rows == []:
+        if rows == []:  # return data for all rows
             return self.data[:,cols_index].copy()
         else: # rows given as parameter
             return self.data[np.ix_(rows, cols_index)].copy()
