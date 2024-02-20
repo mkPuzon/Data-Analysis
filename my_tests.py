@@ -8,5 +8,9 @@ def test():
     
     test_data = Data(filepath_iris)
     
+    ml = [1,2,3,4,5,6]
+    print(ml[-5:])
+    
 if __name__ == "__main__":
     test()
+    

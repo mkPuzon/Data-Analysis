@@ -326,7 +326,7 @@ Showing first 5/{len(self.data)} rows:
             NOTE: This should be a COPY, not the data stored here itself. This can be accomplished with numpy's copy
             function.
         '''
-        pass
+        return np.copy(self.data)
 
     def head(self):
         '''Return the 1st five data samples (all variables)
@@ -337,7 +337,7 @@ Showing first 5/{len(self.data)} rows:
         -----------
         ndarray. shape=(5, num_vars). 1st five data samples.
         '''
-        pass
+        return self.data[:5]
 
     def tail(self):
         '''Return the last five data samples (all variables)
@@ -348,7 +348,7 @@ Showing first 5/{len(self.data)} rows:
         -----------
         ndarray. shape=(5, num_vars). Last five data samples.
         '''
-        pass
+        return self.data[-5:]
 
     def limit_samples(self, start_row, end_row):
         '''Update the data so that this `Data` object only stores samples in the contiguous range:
@@ -358,7 +358,7 @@ Showing first 5/{len(self.data)} rows:
         (Week 2)
 
         '''
-        pass
+        self.data = self.data[start_row : end_row]
 
     def select_data(self, headers, rows=[]):
         '''Return data samples corresponding to the variable names in `headers`.
@@ -382,4 +382,11 @@ Showing first 5/{len(self.data)} rows:
 
         Hint: For selecting a subset of rows from the data ndarray, check out np.ix_
         '''
-        pass
+        cols_index = []
+        for header in headers:
+            # get header indecies
+            cols_index.append(self.header2col[header])
+        if rows == []:
+            return self.data[:,cols_index].copy()
+        else: # rows given as parameter
+            return self.data[np.ix_(rows, cols_index)].copy()
