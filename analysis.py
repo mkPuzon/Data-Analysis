@@ -124,7 +124,10 @@ class Analysis:
         NOTE: You CANNOT use np.mean here!
         NOTE: There should be no loops in this method!
         '''
-        return np.sum(self.data[np.ix_(rows, self.data.get_header_indices(headers))], axis=0) / self.data.get_num_samples
+        if rows != []:
+            return np.sum(self.data.data[np.ix_(rows, self.data.get_header_indices(headers))], axis=0) / self.data.get_num_samples()
+        else:
+            return np.sum(self.data.data[np.ix_(rows, self.data.get_header_indices(headers))], axis=0) / len(rows)
 
     def var(self, headers, rows=[]):
         '''Computes the variance for each variable in `headers` in the data object.
@@ -147,7 +150,7 @@ class Analysis:
         - There should be no loops in this method!
         '''
         # subtract mean from each element
-        arr = self.data[np.ix_(rows, self.data.get_header_indices(headers)) - np.ones([self.data.get_num_samples, len(headers)])*self.mean()]
+        arr = self.data.data[np.ix_(rows, self.data.get_header_indices(headers)) - np.ones([self.data.get_num_samples, len(headers)])*self.mean()]
         # square each element and divide by mean
         arr = np.square(arr) / self.mean()
         return np.sum(arr, axis=0)
@@ -204,7 +207,22 @@ class Analysis:
 
         NOTE: Do not call plt.show() here.
         '''
-        pass
+        plt.figure(figsize=(12,8))
+        
+        x_lab = ind_var
+        y_lab = dep_var
+        
+        x = self.data.select_data([x_lab], np.arange(0,len(self.data.data)))
+        y = self.data.select_data([y_lab])
+        
+        plt.scatter(x,y, color=plt.cm.Set1.colors[0])
+        
+        plt.xlabel = x_lab
+        plt.ylabel = y_lab
+        
+        plt.title(title)
+        
+        return x, y
 
     def pair_plot(self, data_vars, fig_sz=(12, 12), title=''):
         '''Create a pair plot: grid of scatter plots showing all combinations of variables in `data_vars` in the
