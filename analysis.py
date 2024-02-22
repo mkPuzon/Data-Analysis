@@ -50,13 +50,8 @@ class Analysis:
 
         NOTE: There should be no loops in this method!
         '''
-        # np.min(test_data, axis=0) --> from Lab01b
-        if rows != []:
-            return np.min(self.data.data[np.ix_(rows, self.data.get_header_indices(headers))], axis=0)
-        else:
-            all_rows = np.arange(0,self.data.get_num_samples())
-            return np.min(self.data.data[np.ix_(all_rows, self.data.get_header_indices(headers))], axis=0)
-
+        return np.min(self.data.select_data(headers, rows), axis=0)
+        
     def max(self, headers, rows=[]):
         '''Computes the maximum of each variable in `headers` in the data object.
         Possibly only in a subset of data samples (`rows`) if `rows` is not empty.
@@ -75,12 +70,8 @@ class Analysis:
 
         NOTE: There should be no loops in this method!
         '''
-        if rows != []:
-            return np.max(self.data.data[np.ix_(rows, self.data.get_header_indices(headers))], axis=0)
-        else:
-            all_rows = np.arange(0,self.data.get_num_samples())
-            return np.max(self.data.data[np.ix_(all_rows, self.data.get_header_indices(headers))], axis=0)
-
+        return np.max(self.data.select_data(headers, rows), axis=0)
+        
     def range(self, headers, rows=[]):
         '''Computes the range [min, max] for each variable in `headers` in the data object.
         Possibly only in a subset of data samples (`rows`) if `rows` is not empty.
@@ -124,11 +115,8 @@ class Analysis:
         NOTE: You CANNOT use np.mean here!
         NOTE: There should be no loops in this method!
         '''
-        if rows != []:
-            return np.sum(self.data.data[np.ix_(rows, self.data.get_header_indices(headers))], axis=0) / self.data.get_num_samples()
-        else:
-            return np.sum(self.data.data[np.ix_(rows, self.data.get_header_indices(headers))], axis=0) / len(rows)
-
+        return np.sum(self.data.select_data(headers, rows), axis=0) / self.data.select_data(headers, rows).shape[0]
+       
     def var(self, headers, rows=[]):
         '''Computes the variance for each variable in `headers` in the data object.
         Possibly only in a subset of data samples (`rows`) if `rows` is not empty.
@@ -150,12 +138,16 @@ class Analysis:
         - There should be no loops in this method!
         '''
         # subtract mean from each element
-        arr = self.data.data[np.ix_(rows, self.data.get_header_indices(headers)) - np.ones([self.data.get_num_samples, len(headers)])*self.mean()]
+        # arr = self.data.data[np.ix_(rows, self.data.get_header_indices(headers)) - np.ones([self.data.get_num_samples(), len(headers)])*self.mean(headers,rows)]
+        arr = self.data.select_data(headers, rows)
+        arr = arr - self.mean(headers, rows)
         # square each element and divide by mean
-        arr = np.square(arr) / self.mean()
-        return np.sum(arr, axis=0)
-        # arr = np.sum(self.data[np.ix_(rows, self.data.get_header_indices(headers)) - np.ones([self.data.get_num_samples, len(headers)])*self.mean()], axis=0)
-
+        arr = np.square(arr)
+        num_samples = len(arr)
+        arr = np.sum(arr, axis=0)
+        arr = arr / ((num_samples) - 1)
+        return arr
+        
     def std(self, headers, rows=[]):
         '''Computes the standard deviation for each variable in `headers` in the data object.
         Possibly only in a subset of data samples (`rows`) if `rows` is not empty.
@@ -176,7 +168,7 @@ class Analysis:
         - You CANNOT use np.var, np.std, or np.mean here!
         - There should be no loops in this method!
         '''
-        return 
+        return np.power(self.var(headers, rows), 1/2)
 
     def show(self):
         '''Simple wrapper function for matplotlib's show function.
@@ -212,13 +204,15 @@ class Analysis:
         x_lab = ind_var
         y_lab = dep_var
         
+        # plt.xlabel(x_lab)
+        # plt.ylabel(y_lab)
+        
         x = self.data.select_data([x_lab], np.arange(0,len(self.data.data)))
         y = self.data.select_data([y_lab])
         
         plt.scatter(x,y, color=plt.cm.Set1.colors[0])
         
-        plt.xlabel = x_lab
-        plt.ylabel = y_lab
+        
         
         plt.title(title)
         
@@ -257,5 +251,25 @@ class Analysis:
 
         NOTE: For loops are allowed here!
         '''
+        num_rows = len(data_vars)
+        num_cols = len(data_vars)
+        
+        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=fig_sz, sharex='col', sharey='row')
+            
+        # graph all combinations of data
+        for i in range(len(data_vars)):
+            for j in range(len(data_vars)):
+                y = self.data.select_data([data_vars[i]])
+                x = self.data.select_data([data_vars[j]])
+                axes[i,j].scatter(x,y,color=plt.cm.Set1.colors[i])
+                if j == 0:
+                    axes[i,j].set_ylabel(data_vars[i])
+                if i == len(data_vars) - 1:
+                    axes[i,j].set_xlabel(data_vars[j])
+        # adjust spacing
+        # plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.6, hspace=0.5)
+     
+        if title != '':
+            fig.suptitle(title)
 
-        pass
+        return fig, axes

@@ -1,6 +1,0 @@
-animal_id,name,in_reason,in_condition,animal_type,breed,color,in_year,in_month,in_day,in_hour,found_state,found_location,sex,in_age_years,outcome,outcome_subtype,out_year,out_month,out_day,out_hour,out_age_years,dob_month,dob_day,dob_year
-numeric,string,categorical,categorical,categorical,categorical,categorical,categorical,categorical,categorical,categorical,categorical,string,categorical,numeric,categorical,categorical,categorical,categorical,categorical,categorical,categorical,categorical,categorical,categorical
-657197,Gecko,,,Cat,Domestic Shorthair Mix,Brown Tabby,,,,,,,Male,,Adoption,,2013,10,09,13,0.33,05,12,2013
-651995,*Sugar,,,Dog,Staffordshire Mix,Brown/White,,,,,,,Female,,Adoption,Foster,2018,07,02,15,6.0,10,18,2011
-662741,*Todd,,,Cat,Domestic Shorthair Mix,Black,,,,,,,Male,,Transfer,Partner,2013,10,05,12,0.08,08,11,2013
-664032,Parker,,,Dog,German Shepherd Mix,Black/Tan,,,,,,,Female,,Adoption,,2013,10,01,17,0.17,07,27,2013
