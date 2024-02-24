@@ -148,11 +148,6 @@ class Data:
             if self.header_types[i] == 'categorical':
                 # make dict entry with empty list as key
                 self.cats2levels[self.headers[i]] = []
-                # for sample in self.data:
-                #     # print(sample[i]) # 14 causing problems in test04
-                #     if sample[i] not in self.cats2levels[self.headers[i]]:
-                #         # if element not an option in its cats2levels dictionary key list add it
-                #         self.cats2levels[self.headers[i]].append(sample[i])
                         
         # determine which cols to copy to self.data
         data_types = ['numeric', 'categorical']
@@ -176,13 +171,11 @@ class Data:
                         sample[i] = np.nan
                     elif i in catcols_to_keep:
                         sample[i] = 'Missing'
-                # if sample.index(element) in cols_to_keep:
                 # if i in cols_to_keep:
                 if i in numcols_to_keep:
                     # turn into float if possible
                     num_cat_sample.append(float(sample[i]))
                 elif i in catcols_to_keep:
-                    # print(sample[i]) # 14 causing problems in test04
                     if sample[i] not in self.cats2levels[self.headers[i]]:
                         # if element not an option in its cats2levels dictionary key list add it
                         self.cats2levels[self.headers[i]].append(sample[i])
