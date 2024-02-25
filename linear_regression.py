@@ -80,7 +80,24 @@ class LinearRegression(analysis.Analysis):
         - By the end of this method, all instance variables should be set (see constructor).
 
         NOTE: Use other methods in this class where ever possible (do not write the same code twice!)
-        '''pass
+        '''
+        A = self.data.select_data(ind_vars)
+        y = self.data.select_data([dep_var])
+        
+        self.ind_vars = ind_vars
+        self.dep_var = dep_var
+        self.A = A
+        self.y = y
+        
+        if method == 'scipy':
+            self.linear_regression_scipy(A,y)
+        elif method == 'normal':
+            pass
+        elif method == 'qr':
+            pass
+        else:
+            print(f"Invalid method '{method}'")
+            exit()
 
     def linear_regression_scipy(self, A, y):
         '''Performs a linear regression using scipy's built-in least squares solver (scipy.linalg.lstsq).
@@ -98,7 +115,20 @@ class LinearRegression(analysis.Analysis):
         c: ndarray. shape=(num_ind_vars+1, 1)
             Linear regression slope coefficients for each independent var PLUS the intercept term
         '''
-        pass
+        # add col of ones for intercept
+        ones = np.ones([A.shape[0], 1])
+        A = np.hstack((ones, A))
+        
+        c, residues, rank, s = scipy.linalg.lstsq(A,y)
+        self.residuals = residues
+        self.intercept = np.array([c[0]])
+        self.slope = np.array(c[1:])
+        
+        self.R2 = None
+        self.mse = None
+        
+        
+        return c
 
     def linear_regression_normal(self, A, y):
         '''Performs a linear regression using the normal equations.
