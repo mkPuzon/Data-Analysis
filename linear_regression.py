@@ -281,7 +281,6 @@ class LinearRegression(analysis.Analysis):
         mse = (1/len(self.y)) * np.sum(self.compute_residuals(y_pred)**2)
         return mse
         
-
     def scatter(self, ind_var, dep_var, title):
         '''Creates a scatter plot with a regression line to visualize the model fit.
         Assumes linear regression has been already run.
@@ -329,7 +328,16 @@ class LinearRegression(analysis.Analysis):
         every ind and dep variable pair.
         - Make sure that each plot has a title (with R^2 value in it)
         '''
-        pass
+        fig, axes = super().pair_plot(data_vars=data_vars, fig_sz=fig_sz)
+        
+        for i in range(len(axes)):  # for each row
+            for j in range(len(axes)):  # for each col
+                self.linear_regression([data_vars[i]],data_vars[j])
+                x_points = np.linspace(axes[i,j].get_xlim()[0], axes[i,j].get_xlim()[1], num=50)
+                y_points = x_points * self.slope + self.intercept
+                axes[i,j].plot(x_points, y_points[:1].squeeze(), color=plt.cm.Set1.colors[8])
+                axes[i,j].title.set_text(f'R2 = {self.R2:.3f}')
+        
 
     def make_polynomial_matrix(self, A, p):
         '''Takes an independent variable data column vector `A and transforms it into a matrix appropriate
