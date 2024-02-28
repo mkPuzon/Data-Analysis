@@ -90,14 +90,20 @@ class LinearRegression(analysis.Analysis):
         self.y = y
         
         if method == 'scipy':
-            self.linear_regression_scipy(A,y)
+            self.linear_regression_scipy(A, y)
         elif method == 'normal':
-            pass
+            self.linear_regression_normal(A, y)
         elif method == 'qr':
-            pass
+            self.linear_regression_qr(A, y)
         else:
-            print(f"Invalid method '{method}'")
+            print(f"Invalid method : '{method}'")
             exit()
+            
+        y_pred = self.predict()
+        
+        self.R2 = self.r_squared(y_pred)
+        self.residuals = self.compute_residuals(y_pred)
+        self.mse = self.compute_mse()
 
     def linear_regression_scipy(self, A, y):
         '''Performs a linear regression using scipy's built-in least squares solver (scipy.linalg.lstsq).
@@ -120,13 +126,8 @@ class LinearRegression(analysis.Analysis):
         A = np.hstack((ones, A))
         
         c, residues, rank, s = scipy.linalg.lstsq(A,y)
-        self.residuals = residues
-        self.intercept = np.array([c[0]])
+        self.intercept = float(c[0])
         self.slope = np.array(c[1:])
-        
-        self.R2 = None
-        self.mse = None
-        
         
         return c
 
@@ -222,7 +223,14 @@ class LinearRegression(analysis.Analysis):
 
         NOTE: You can write this method without any loops!
         '''
-        pass
+        # y_pred = mA + b, where (m, b) are the model fit slope and intercept, A is the data matrix.
+        if not isinstance(X, list) and not isinstance(X, (np.ndarray, np.generic)):
+            y_pred = self.A@self.slope + self.intercept
+            return y_pred
+        else:
+            A_mat = X
+            y_pred = A_mat@self.slope + self.intercept
+            return y_pred
 
     def r_squared(self, y_pred):
         '''Computes the R^2 quality of fit statistic
@@ -237,7 +245,10 @@ class LinearRegression(analysis.Analysis):
         R2: float.
             The R^2 statistic
         '''
-        pass
+        E = np.sum((self.y - y_pred)**2)
+        S = np.sum((self.y - np.mean(self.y))**2)
+        R2 = 1 - (E/S)
+        return R2
 
     def compute_residuals(self, y_pred):
         '''Determines the residual values from the linear regression model
@@ -253,7 +264,8 @@ class LinearRegression(analysis.Analysis):
             Difference between the y values and the ones predicted by the regression model at the
             data samples
         '''
-        pass
+        residuals = self.y - y_pred
+        return residuals
 
     def compute_mse(self):
         '''Computes the mean squared error in the predicted y compared the actual y values.
@@ -265,7 +277,10 @@ class LinearRegression(analysis.Analysis):
 
         Hint: Make use of self.compute_residuals
         '''
-        pass
+        y_pred = self.predict()
+        mse = (1/len(self.y)) * np.sum(self.compute_residuals(y_pred)**2)
+        return mse
+        
 
     def scatter(self, ind_var, dep_var, title):
         '''Creates a scatter plot with a regression line to visualize the model fit.
@@ -286,7 +301,11 @@ class LinearRegression(analysis.Analysis):
         - Plot the line on top of the scatterplot.
         - Make sure that your plot has a title (with R^2 value in it)
         '''
-        pass
+        title = title + f" (R2 = {self.R2:.3f})"
+        x, y = super().scatter(ind_var,dep_var,title)
+        x_points = np.linspace(x.min(), x.max(), num=50)
+        y_points = x_points * self.slope + self.intercept
+        plt.plot(x_points, y_points.squeeze())
 
     def pair_plot(self, data_vars, fig_sz=(12, 12), hists_on_diag=True):
         '''Makes a pair plot with regression lines in each panel.
