@@ -240,7 +240,6 @@ class LinearRegression(analysis.Analysis):
             
             for i in range(1,self.p):
                 y_pred += self.c[i] * self.A**i
-            self.y_pred = y_pred
             return y_pred
             
         # y_pred = mA + b, where (m, b) are the model fit slope and intercept, A is the data matrix.
@@ -249,7 +248,6 @@ class LinearRegression(analysis.Analysis):
         else:
             A_mat = X
             y_pred = A_mat@self.slope + self.intercept
-        self.y_pred = y_pred
         return y_pred
 
     def r_squared(self, y_pred):
@@ -323,14 +321,8 @@ class LinearRegression(analysis.Analysis):
         title = title + f" (R2 = {self.R2:.3f})"
         x, y = super().scatter(ind_var,dep_var,title)
         x_points = np.linspace(x.min(), x.max(), num=50)
-        if self.p > 1:
-            x_vals = self.make_polynomial_matrix(x_points.reshape((x_points.shape[0],1)),self.p)
-            y_vals = x_vals @ self.slope + self.intercept
-            plt.plot(x_vals, y_vals.squeeze())
-        else:
-            y_points = x_points * self.slope + self.intercept
-
-            plt.plot(x_points, y_points.squeeze())
+        y_points = x_points * self.slope + self.intercept
+        plt.plot(x_points, y_points.squeeze())
 
     def pair_plot(self, data_vars, fig_sz=(12, 12), hists_on_diag=True):
         '''Makes a pair plot with regression lines in each panel.

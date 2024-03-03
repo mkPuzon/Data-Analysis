@@ -210,9 +210,8 @@ class Analysis:
         x = self.data.select_data([x_lab], np.arange(0,len(self.data.data)))
         y = self.data.select_data([y_lab])
         
+        
         plt.scatter(x,y, color=plt.cm.Set1.colors[0])
-        
-        
         
         plt.title(title)
         
