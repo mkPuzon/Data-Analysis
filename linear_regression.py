@@ -124,6 +124,7 @@ class LinearRegression(analysis.Analysis):
         # add col of ones for intercept
         ones = np.ones([A.shape[0], 1])
         A = np.hstack((ones, A))
+        self.y = y
         
         c, residues, rank, s = scipy.linalg.lstsq(A,y)
         self.c = c
@@ -326,7 +327,7 @@ class LinearRegression(analysis.Analysis):
         if self.p > 1:
             x_vals = self.make_polynomial_matrix(x_points.reshape((x_points.shape[0],1)),self.p)
             y_vals = x_vals @ self.slope + self.intercept
-            plt.plot(x_vals, y_vals.squeeze())
+            plt.plot(x_points, y_vals.squeeze())
         else:
             y_points = x_points * self.slope + self.intercept
 
@@ -358,23 +359,27 @@ class LinearRegression(analysis.Analysis):
         
         for i in range(len(axes)):  # for each row
             for j in range(len(axes)):  # for each col
-                # if hists_on_diag:
-                #     numVars = len(data_vars)
-                #     axes[i, j].remove()
-                #     axes[i, j] = fig.add_subplot(numVars, numVars, i*numVars+j+1)
-                #     if j < numVars-1:
-                #         axes[i, j].set_xticks([])
-                #     else:
-                #         axes[i, j].set_xlabel(data_vars[i])
-                #     if i > 0:
-                #         axes[i, j].set_yticks([])
-                #     else:
-                #         axes[i, j].set_ylabel(data_vars[i])
+                    
                 self.linear_regression([data_vars[i]],data_vars[j])
                 x_points = np.linspace(axes[i,j].get_xlim()[0], axes[i,j].get_xlim()[1], num=50)
                 y_points = x_points * self.slope + self.intercept
-                axes[i,j].plot(x_points, y_points[:1].squeeze(), color=plt.cm.Set1.colors[8])
-                axes[i,j].title.set_text(f'R2 = {self.R2:.3f}')
+                if i != j:
+                    axes[i,j].plot(x_points, y_points[:1].squeeze(), color=plt.cm.Set1.colors[8])
+                    axes[i,j].title.set_text(f'R2 = {self.R2:.3f}')
+                else:
+                    numVars = len(data_vars)
+                    axes[i, j].remove()
+                    axes[i, j] = fig.add_subplot(numVars, numVars, i*numVars+j+1)
+                    if j < numVars-1:
+                        axes[i, j].set_xticks([])
+                    else:
+                        axes[i, j].set_xlabel(data_vars[i])
+                    if i > 0:
+                        axes[i, j].set_yticks([])
+                    else:
+                        axes[i, j].set_ylabel(data_vars[i])
+                    axes[i,j].hist(self.data.select_data([data_vars[i]]), color=plt.cm.Set1.colors[j])
+                
         
     def make_polynomial_matrix(self, A, p):
         '''Takes an independent variable data column vector `A and transforms it into a matrix appropriate
