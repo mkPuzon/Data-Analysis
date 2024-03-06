@@ -216,7 +216,20 @@ class LinearRegression(analysis.Analysis):
         Normalize each current column after orthogonalizing.
         - R is found by equation summarized in notebook
         '''
-        pass
+        Q = np.zeros(A.shape)
+        A_temp = A
+        
+        for i in range(A.shape[1]): # for each col
+            for j in range(i):
+                A_temp[:,i] = np.resize(A[:,i] - np.sum([A[:,i], Q[:,j]]) * Q[:,j], A[:,i].shape)
+                A_temp[:,i] = A[:,i] / np.sqrt(np.dot(A[:,i],A[:,i]))
+        for i in range(A.shape[1]):
+            Q[:,i] = A_temp[:,i]
+        
+        R = np.transpose(Q)@A
+        
+        return Q, R
+        
 
     def predict(self, X=None):
         '''Use fitted linear regression model to predict the values of data matrix self.A.
@@ -238,7 +251,6 @@ class LinearRegression(analysis.Analysis):
         '''
         if self.p > 1:
             y_pred = float(self.c[0])
-            
             for i in range(1,self.p):
                 y_pred += self.c[i] * self.A**i
             self.y_pred = y_pred
@@ -266,8 +278,10 @@ class LinearRegression(analysis.Analysis):
         R2: float.
             The R^2 statistic
         '''
-        E = np.sum((self.y - y_pred)**2)
+        E = np.sum((self.y - y_pred)**2) / self.p
         S = np.sum((self.y - np.mean(self.y))**2)
+        print(f"E : {E}")
+        print(f"S : {S}")
         R2 = 1 - (E/S)
         return R2
 
@@ -323,7 +337,7 @@ class LinearRegression(analysis.Analysis):
         '''
         title = title + f" (R2 = {self.R2:.3f})"
         x, y = super().scatter(ind_var,dep_var,title)
-        x_points = np.linspace(x.min(), x.max(), num=50)
+        x_points = np.linspace(x.min(), x.max(), num=100)
         if self.p > 1:
             x_vals = self.make_polynomial_matrix(x_points.reshape((x_points.shape[0],1)),self.p)
             y_vals = x_vals @ self.slope + self.intercept
@@ -432,12 +446,12 @@ class LinearRegression(analysis.Analysis):
             appropriate for polynomial regresssion. Do this with self.make_polynomial_matrix.
             - You set the instance variable for the polynomial regression degree (self.p)
         '''
-        A = self.data.select_data(ind_var)
-        self.A = self.make_polynomial_matrix(A, p)
+        self.A = self.data.select_data(ind_var)
+        A = self.make_polynomial_matrix(self.A, p)
         self.p = p
         self.y = self.data.select_data([dep_var])
 
-        c = self.linear_regression_scipy(self.A, self.y)
+        c = self.linear_regression_scipy(A, self.y)
         self.c = c
         
         y_pred = self.predict()
