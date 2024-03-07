@@ -90,14 +90,17 @@ class LinearRegression(analysis.Analysis):
         self.y = y
         
         if method == 'scipy':
-            self.linear_regression_scipy(A, y)
+            self.c = self.linear_regression_scipy(A, y)
         elif method == 'normal':
-            self.linear_regression_normal(A, y)
+            self.c = self.linear_regression_normal(A, y)
         elif method == 'qr':
-            self.linear_regression_qr(A, y)
+            self.c = self.linear_regression_qr(A, y)
         else:
             print(f"Invalid method : '{method}'")
             exit()
+            
+        self.intercept = self.c[0]
+        self.slope = self.c[1:]
             
         y_pred = self.predict()
         
@@ -127,9 +130,6 @@ class LinearRegression(analysis.Analysis):
         self.y = y
         
         c, residues, rank, s = scipy.linalg.lstsq(A,y)
-        self.c = c
-        self.intercept = float(c[0])
-        self.slope = np.array(c[1:])
         
         return c
 
@@ -159,9 +159,6 @@ class LinearRegression(analysis.Analysis):
         aty = np.transpose(A) @ y
         
         c = ata_inv @ aty
-        self.intercept = float(c[0])
-        self.slope = np.array(c[1:])
-        # print(f"self.intercept: {self.intercept}\nself.slope: {self.slope}")
         return c
 
     def linear_regression_qr(self, A, y):
@@ -186,7 +183,14 @@ class LinearRegression(analysis.Analysis):
         NOTE: You should not compute any matrix inverses! Check out scipy.linalg.solve_triangular
         to backsubsitute to solve for the regression coefficients `c`.
         '''
-        pass
+        ones = np.ones([A.shape[0], 1])
+        A = np.hstack((ones, A))
+        self.y = y
+        Q, R = self.qr_decomposition(A)
+        
+        # solve for c : Rc = QTy
+        c = scipy.linalg.solve_triangular(R, np.transpose(Q)@y)
+        return c
 
     def qr_decomposition(self, A):
         '''Performs a QR decomposition on the matrix A. Make column vectors orthogonal relative
@@ -216,21 +220,28 @@ class LinearRegression(analysis.Analysis):
         Normalize each current column after orthogonalizing.
         - R is found by equation summarized in notebook
         '''
-        Q = np.zeros(A.shape)
-        A_temp = A
-        
+        Q = np.zeros(A.shape)   # (N, M+1)
+        R = np.zeros((A.shape[1], A.shape[1]))    # (M+1, M+1)
+
         for i in range(A.shape[1]): # for each col
+            # make col orthogonal to all previous cols
+            col = A[:, i].copy()
             for j in range(i):
-                A_temp[:,i] = np.resize(A[:,i] - np.sum([A[:,i], Q[:,j]]) * Q[:,j], A[:,i].shape)
-                A_temp[:,i] = A[:,i] / np.sqrt(np.dot(A[:,i],A[:,i]))
-        for i in range(A.shape[1]):
-            Q[:,i] = A_temp[:,i]
-        
-        R = np.transpose(Q)@A
-        
+                # project current col A_temp[:,i] onto each of the previous cols A_temp[:,j] for all valid j
+                projection = (np.dot(Q[:, j], A[:, i]) / np.dot(Q[:, j], Q[:, j])) * Q[:, j]
+                # subtract each projection from the current col:
+                col -= projection
+
+            # normalize each col
+            col /= np.linalg.norm(col)
+
+            # store col in Q
+            Q[:, i] = col
+
+        R = np.transpose(Q) @ A
+
         return Q, R
         
-
     def predict(self, X=None):
         '''Use fitted linear regression model to predict the values of data matrix self.A.
         Generates the predictions y_pred = mA + b, where (m, b) are the model fit slope and intercept,
@@ -249,13 +260,15 @@ class LinearRegression(analysis.Analysis):
 
         NOTE: You can write this method without any loops!
         '''
+        # print(f"self.A : {self.A.shape}")
+        # print(f"self.slope : {self.slope.shape}")
         if self.p > 1:
-            y_pred = float(self.c[0])
-            for i in range(1,self.p):
-                y_pred += self.c[i] * self.A**i
-            self.y_pred = y_pred
-            return y_pred
-            
+            self.A = self.make_polynomial_matrix(self.A,self.p)
+            self.slope = np.resize(self.slope, (self.A.shape[1], 1))
+        # print(f"self.A : {self.A.shape}")
+        # print(f"self.slope : {self.slope.shape}")
+        # print("-"*50)
+        
         # y_pred = mA + b, where (m, b) are the model fit slope and intercept, A is the data matrix.
         if not isinstance(X, list) and not isinstance(X, (np.ndarray, np.generic)):
             y_pred = self.A@self.slope + self.intercept
@@ -278,10 +291,8 @@ class LinearRegression(analysis.Analysis):
         R2: float.
             The R^2 statistic
         '''
-        E = np.sum((self.y - y_pred)**2) / self.p
+        E = np.sum((self.y - y_pred)**2)
         S = np.sum((self.y - np.mean(self.y))**2)
-        print(f"E : {E}")
-        print(f"S : {S}")
         R2 = 1 - (E/S)
         return R2
 
@@ -312,7 +323,7 @@ class LinearRegression(analysis.Analysis):
 
         Hint: Make use of self.compute_residuals
         '''
-        y_pred = self.predict()
+        y_pred = self.y_pred
         mse = (1/len(self.y)) * np.sum(self.compute_residuals(y_pred)**2)
         return mse
         
@@ -384,6 +395,7 @@ class LinearRegression(analysis.Analysis):
                     numVars = len(data_vars)
                     axes[i, j].remove()
                     axes[i, j] = fig.add_subplot(numVars, numVars, i*numVars+j+1)
+                    axes[i,j].title.set_text(f'R2 = {self.R2:.3f}')
                     if j < numVars-1:
                         axes[i, j].set_xticks([])
                     else:
@@ -393,8 +405,7 @@ class LinearRegression(analysis.Analysis):
                     else:
                         axes[i, j].set_ylabel(data_vars[i])
                     axes[i,j].hist(self.data.select_data([data_vars[i]]), color=plt.cm.Set1.colors[j])
-                
-        
+                     
     def make_polynomial_matrix(self, A, p):
         '''Takes an independent variable data column vector `A and transforms it into a matrix appropriate
         for a polynomial regression model of degree `p`.
@@ -447,17 +458,11 @@ class LinearRegression(analysis.Analysis):
             - You set the instance variable for the polynomial regression degree (self.p)
         '''
         self.A = self.data.select_data(ind_var)
-        A = self.make_polynomial_matrix(self.A, p)
+        # A = self.make_polynomial_matrix(self.A, p)
         self.p = p
         self.y = self.data.select_data([dep_var])
 
-        c = self.linear_regression_scipy(A, self.y)
-        self.c = c
-        
-        y_pred = self.predict()
-        self.R2 = self.r_squared(y_pred)
-        self.residuals = self.compute_residuals(y_pred)
-        self.mse = self.compute_mse()
+        self.linear_regression(ind_var, dep_var, 'qr')
 
     def get_fitted_slope(self):
         '''Returns the fitted regression slope.
