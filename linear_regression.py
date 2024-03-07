@@ -110,7 +110,6 @@ class LinearRegression(analysis.Analysis):
         self.R2 = self.r_squared(y_pred)
         self.residuals = self.compute_residuals(y_pred)
         self.mse = self.compute_mse()
-        print(self.mse)
 
     def linear_regression_scipy(self, A, y):
         '''Performs a linear regression using scipy's built-in least squares solver (scipy.linalg.lstsq).
