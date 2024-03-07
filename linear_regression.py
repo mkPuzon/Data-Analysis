@@ -81,20 +81,23 @@ class LinearRegression(analysis.Analysis):
 
         NOTE: Use other methods in this class where ever possible (do not write the same code twice!)
         '''
-        A = self.data.select_data(ind_vars)
-        y = self.data.select_data([dep_var])
+        self.A = self.data.select_data(ind_vars)
+        self.y = self.data.select_data([dep_var])
         
         self.ind_vars = ind_vars
         self.dep_var = dep_var
-        self.A = A
-        self.y = y
+
+        self.p = p
         
-        if method == 'scipy':
-            self.c = self.linear_regression_scipy(A, y)
+        if p > 1:
+            self.A = self.make_polynomial_matrix(self.A,p)
+            self.c = self.linear_regression_qr(self.A, self.y)
+        elif method == 'scipy':
+            self.c = self.linear_regression_scipy(self.A, self.y)
         elif method == 'normal':
-            self.c = self.linear_regression_normal(A, y)
+            self.c = self.linear_regression_normal(self.A, self.y)
         elif method == 'qr':
-            self.c = self.linear_regression_qr(A, y)
+            self.c = self.linear_regression_qr(self.A, self.y)
         else:
             print(f"Invalid method : '{method}'")
             exit()
@@ -107,6 +110,7 @@ class LinearRegression(analysis.Analysis):
         self.R2 = self.r_squared(y_pred)
         self.residuals = self.compute_residuals(y_pred)
         self.mse = self.compute_mse()
+        print(self.mse)
 
     def linear_regression_scipy(self, A, y):
         '''Performs a linear regression using scipy's built-in least squares solver (scipy.linalg.lstsq).
@@ -260,14 +264,7 @@ class LinearRegression(analysis.Analysis):
 
         NOTE: You can write this method without any loops!
         '''
-        # print(f"self.A : {self.A.shape}")
-        # print(f"self.slope : {self.slope.shape}")
-        if self.p > 1:
-            self.A = self.make_polynomial_matrix(self.A,self.p)
-            self.slope = np.resize(self.slope, (self.A.shape[1], 1))
-        # print(f"self.A : {self.A.shape}")
-        # print(f"self.slope : {self.slope.shape}")
-        # print("-"*50)
+
         
         # y_pred = mA + b, where (m, b) are the model fit slope and intercept, A is the data matrix.
         if not isinstance(X, list) and not isinstance(X, (np.ndarray, np.generic)):
@@ -348,9 +345,9 @@ class LinearRegression(analysis.Analysis):
         '''
         title = title + f" (R2 = {self.R2:.3f})"
         x, y = super().scatter(ind_var,dep_var,title)
-        x_points = np.linspace(x.min(), x.max(), num=100)
+        x_points = np.linspace(x.min(), x.max(), num=200)
         if self.p > 1:
-            x_vals = self.make_polynomial_matrix(x_points.reshape((x_points.shape[0],1)),self.p)
+            x_vals = self.make_polynomial_matrix(x_points, self.p)
             y_vals = x_vals @ self.slope + self.intercept
             plt.plot(x_points, y_vals.squeeze())
         else:
@@ -428,12 +425,19 @@ class LinearRegression(analysis.Analysis):
         NOTE: There should not be a intercept term ("x^0"), the linear regression solver method
         will take care of that.
         '''
-        newA = A
-        for i in range(p+1):
-            if i != 0 and i != 1:
-                newCol = A**i
-                newA = np.c_[newA, newCol]
-        return newA.astype(float)
+        # newA = A
+        # for i in range(p+1):
+        #     if i != 0 and i != 1:
+        #         newCol = A**i
+        #         newA = np.c_[newA, newCol]
+        # return newA.astype(float)
+        
+        num_data_samps = A.shape[0]
+        poly_matrix = np.zeros((num_data_samps, p))
+
+        for i in range(1, p+1):
+            poly_matrix[:, i - 1] = np.resize(np.power(A, i), (num_data_samps,))
+        return poly_matrix
 
     def poly_regression(self, ind_var, dep_var, p):
         '''Perform polynomial regression — generalizes self.linear_regression to polynomial curves
@@ -457,12 +461,8 @@ class LinearRegression(analysis.Analysis):
             appropriate for polynomial regresssion. Do this with self.make_polynomial_matrix.
             - You set the instance variable for the polynomial regression degree (self.p)
         '''
-        self.A = self.data.select_data(ind_var)
-        # A = self.make_polynomial_matrix(self.A, p)
-        self.p = p
-        self.y = self.data.select_data([dep_var])
-
-        self.linear_regression(ind_var, dep_var, 'qr')
+        # implemented in the linear_regression method
+        self.linear_regression(ind_var, dep_var, p=p)
 
     def get_fitted_slope(self):
         '''Returns the fitted regression slope.

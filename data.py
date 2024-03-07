@@ -383,3 +383,5 @@ Showing first 5/{len(self.data)} rows:
             return self.data[:,cols_index].copy()
         else: # specific rows given as parameter
             return self.data[np.ix_(rows, cols_index)].copy()
+        
+        
